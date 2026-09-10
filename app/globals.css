@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
+/* Same brand palette as the portfolio site, kept minimal here — this is an
+   internal tool, not a marketing page, so no motion system is imported. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --coral: #f29191;
+  --blush: #f7adad;
+  --aqua: #b1e5e6;
+  --mint: #ccfbfa;
+  --ink: #0e2b2a;
+  --ink-2: #38534f;
+  --ink-3: #4f6e6c;
+  --line: rgba(14, 43, 42, 0.13);
+  --panel: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--mint);
+  --color-foreground: var(--ink);
+  --color-coral: var(--coral);
+  --color-blush: var(--blush);
+  --color-aqua: var(--aqua);
+  --color-mint: var(--mint);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-panel: var(--panel);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-grotesk);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--mint);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .field {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--coral);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    padding: 0.75rem 1.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--coral);
+    color: var(--ink);
+    transition: background-color 0.2s, opacity 0.2s;
+  }
+  .btn:hover {
+    background: var(--blush);
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-ghost {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink-2);
+  }
+  .btn-ghost:hover {
+    background: rgba(14, 43, 42, 0.05);
+  }
 }

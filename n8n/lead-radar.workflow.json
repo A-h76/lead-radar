@@ -1,0 +1,628 @@
+{
+  "name": "Eisha - Qualified Lead Radar",
+  "nodes": [
+    {
+      "id": "e20062e0-23b7-4c7e-bf39-bda9746dd7f0",
+      "name": "Manual Run (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-hunt",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "f0988944-3696-4c6a-9aad-e32aed1b2505",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "21c95831-6ab1-478d-8001-411c3f0cd51d",
+      "name": "Apify: Upwork Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/run-sync-get-dataset-items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"searchQueries\": [\"medical writer\", \"white paper nutrition\", \"compliance content writer\", \"RFP writer health\", \"clinical content writer\", \"research writer\"], \"maxItems\": 30}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "6ecdd4b7-9f26-46e4-9849-1b03bdc889a0",
+      "name": "Normalize: Upwork",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Map whatever fields the chosen Upwork actor returns onto a common shape.\n// Adjust the right-hand field names to match your actor's actual output --\n// open one item in n8n's output panel after a test run to see the real keys.\nreturn $input.all().map(item => {\n  const j = item.json;\n  return { json: {\n    title: j.title || j.jobTitle || 'Untitled',\n    description: j.description || j.snippet || '',\n    url: j.url || j.link || '',\n    platform: 'Upwork',\n  }};\n});"
+      }
+    },
+    {
+      "id": "86dbca8c-674e-403c-9e82-78c8a7453083",
+      "name": "Apify: Company Sites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_CRAWLER_ACTOR_ID}}/run-sync-get-dataset-items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"startUrls\": [{\"url\": \"https://example-health-tech.com/careers\"}, {\"url\": \"https://example-legal-tech.com/blog\"}], \"maxCrawlPages\": 20}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "3aec07db-d4bf-4249-9375-f23fa72603ee",
+      "name": "Normalize: Company Sites",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        220
+      ],
+      "parameters": {
+        "jsCode": "// Same normalization for the website-crawler actor's output shape.\nreturn $input.all().map(item => {\n  const j = item.json;\n  return { json: {\n    title: j.title || j.pageTitle || 'Untitled',\n    description: j.text || j.bodyText || '',\n    url: j.url || '',\n    platform: 'Company Site',\n  }};\n});"
+      }
+    },
+    {
+      "id": "554db642-ab51-49ef-bee1-e7b54bf791f8",
+      "name": "Merge Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        760,
+        110
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "mergeByFields": {
+          "values": []
+        },
+        "joinMode": "keepEverything"
+      }
+    },
+    {
+      "id": "e35a71c1-1c24-4e7f-8d28-f4b56d5cfebf",
+      "name": "Keyword Pre-Filter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        110
+      ],
+      "parameters": {
+        "jsCode": "// Cheap filter BEFORE the OpenAI call, so scoring only runs on\n// plausible leads. Edit this list with Eisha as her niches shift.\nconst KEYWORDS = [\n  'medical', 'clinical', 'nutrition', 'health', 'legal', 'compliance',\n  'rfp', 'proposal', 'white paper', 'peer-reviewed', 'research writer',\n  'academic', 'dietitian', 'dietetics'\n];\n\nreturn $input.all().filter(item => {\n  const text = `${item.json.title} ${item.json.description}`.toLowerCase();\n  return KEYWORDS.some(k => text.includes(k));\n});"
+      }
+    },
+    {
+      "id": "1c610f67-499c-4e1c-a1e5-884c29b784d8",
+      "name": "Loop Leads",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1220,
+        110
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "883d5547-764e-4750-b9ff-833351ebb43d",
+      "name": "Airtable: Check Duplicate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/{{$env.AIRTABLE_BASE_ID}}/Leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.AIRTABLE_API_KEY}}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{'{Source URL} = \"' + $json.url + '\"'}}"
+            },
+            {
+              "name": "maxRecords",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e9388bbb-39be-4ef7-be82-bc6b432c2586",
+      "name": "Is New Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1720,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.records.length}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "78d84beb-b1e9-4943-839c-dc9ca36b8f9c",
+      "name": "OpenAI: Score Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.OPENAI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: \"You are screening freelance leads for a writer with an MSc in Human Nutrition & Dietetics who specializes in evidence-based health content, legal-adjacent writing, white papers, and academic/research writing. A GOOD lead requires subject-matter literacy: clinical accuracy, regulatory awareness, or primary-source research skills. A BAD lead is generic blog/SEO content, low-budget content-mill work, or anything unrelated to health, legal, or research writing. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or \\\\\\\"Not specified\\\\\\\"), fit_score (integer 1-10), score_reasoning (1 sentence, specific about credential fit), urgency (one of High, Medium, Low).\" }, { role: 'user', content: 'Listing title: ' + $json.title + '\\n\\nListing text: ' + $json.description } ] }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "da81eaa2-89e1-4133-8b71-031d70056ea2",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// The chat completion's message content is a JSON *string* -- parse it,\n// then attach the original scraped fields so nothing is lost.\nconst source = $('Loop Leads').item.json;\nconst content = $input.first().json.choices[0].message.content;\nlet ai;\ntry {\n  ai = JSON.parse(content);\n} catch (e) {\n  ai = {\n    client_name: 'Unknown',\n    need_summary: '',\n    budget_signal: 'Not specified',\n    fit_score: 0,\n    score_reasoning: 'AI response was not valid JSON -- check the prompt/model.',\n    urgency: 'Low',\n  };\n}\n\nreturn [{ json: {\n  title: source.title,\n  description: source.description,\n  url: source.url,\n  platform: source.platform,\n  client_name: ai.client_name,\n  need_summary: ai.need_summary,\n  budget_signal: ai.budget_signal,\n  fit_score: ai.fit_score,\n  score_reasoning: ai.score_reasoning,\n  urgency: ai.urgency,\n}}];"
+      }
+    },
+    {
+      "id": "f4b8ab43-3721-474f-9110-c61a33cf857b",
+      "name": "Airtable: Create Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{$env.AIRTABLE_BASE_ID}}/Leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.AIRTABLE_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { 'Title': $json.title, 'Client/Company': $json.client_name, 'Source URL': $json.url, 'Source Platform': $json.platform, 'Need Summary': $json.need_summary, 'Raw Description': $json.description, 'Budget Signal': $json.budget_signal, 'Fit Score': $json.fit_score, 'Score Reasoning': $json.score_reasoning, 'Urgency': $json.urgency, 'Status': 'New', 'Date Found': $now.toISO() } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "fd73066b-f4f7-4cfe-8b7f-5fc28503c9ce",
+      "name": "Airtable: Get Today's Top Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1220,
+        420
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/{{$env.AIRTABLE_BASE_ID}}/Leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.AIRTABLE_API_KEY}}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({Fit Score} >= 7, IS_SAME({Date Found}, TODAY(), 'day'))"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "693544e3-0637-4e73-bd20-b76c6fce5b0c",
+      "name": "Format Digest Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        420
+      ],
+      "parameters": {
+        "jsCode": "const records = $input.first().json.records || [];\nconst rows = records.map(r => {\n  const f = r.fields;\n  return '<li><strong>' + f['Fit Score'] + '/10</strong> -- ' + f['Title'] + ' (' + f['Client/Company'] + ')<br/>' +\n    '<a href=\"' + f['Source URL'] + '\">View listing</a></li>';\n}).join('');\n\nreturn [{ json: {\n  count: records.length,\n  html: '<h2>' + records.length + ' strong lead(s) found today</h2><ul>' + rows + '</ul>'\n}}];"
+      }
+    },
+    {
+      "id": "1f2b212d-249a-4bf6-9a37-c80656e419fc",
+      "name": "Any Top Leads?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1700,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.count}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fd0181fa-e8ab-4550-bbfc-db2ac04f5310",
+      "name": "Email Digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1940,
+        420
+      ],
+      "parameters": {
+        "fromEmail": "={{$env.DIGEST_FROM_EMAIL}}",
+        "toEmail": "={{$env.DIGEST_TO_EMAIL}}",
+        "subject": "=Lead Radar: {{$json.count}} strong lead(s) today",
+        "emailFormat": "html",
+        "html": "={{$json.html}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Manual Run (Webhook)": {
+      "main": [
+        [
+          {
+            "node": "Apify: Upwork Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Apify: Upwork Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Upwork Search": {
+      "main": [
+        [
+          {
+            "node": "Normalize: Upwork",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize: Upwork": {
+      "main": [
+        [
+          {
+            "node": "Merge Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Company Sites": {
+      "main": [
+        [
+          {
+            "node": "Normalize: Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize: Company Sites": {
+      "main": [
+        [
+          {
+            "node": "Merge Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Sources": {
+      "main": [
+        [
+          {
+            "node": "Keyword Pre-Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keyword Pre-Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Leads": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Get Today's Top Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable: Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is New Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Lead?": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Score Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: Score Lead": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Create Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Create Lead": {
+      "main": [
+        [
+          {
+            "node": "Loop Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Get Today's Top Leads": {
+      "main": [
+        [
+          {
+            "node": "Format Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Digest Email": {
+      "main": [
+        [
+          {
+            "node": "Any Top Leads?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Top Leads?": {
+      "main": [
+        [
+          {
+            "node": "Email Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
