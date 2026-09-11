@@ -39,16 +39,16 @@
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd51d",
-      "name": "Apify: Upwork Search 1",
+      "name": "Apify: Start Upwork 1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         260,
-        -120
+        -220
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/run-sync-get-dataset-items",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/runs",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -61,23 +61,127 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"searchQueries\": [\"medical writer\", \"white paper nutrition\"], \"maxItems\": 30}",
-        "options": {
-          "timeout": 300000
-        }
+        "options": {}
+      }
+    },
+    {
+      "id": "31c95831-6ab1-478d-8001-411c3f0cd511",
+      "name": "Apify: Wait Upwork 1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        -220
+      ],
+      "webhookId": "b1a1c1d1-0001-4a1a-8a1a-000000000001",
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "41c95831-6ab1-478d-8001-411c3f0cd512",
+      "name": "Apify: Check Upwork 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        -220
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/actor-runs/{{ $('Apify: Start Upwork 1').item.json.data.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "51c95831-6ab1-478d-8001-411c3f0cd513",
+      "name": "Apify: Run Done? Upwork 1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "RUNNING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "61c95831-6ab1-478d-8001-411c3f0cd514",
+      "name": "Apify: Get Items Upwork 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        -280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Apify: Start Upwork 1').item.json.data.defaultDatasetId }}/items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
       }
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd502",
-      "name": "Apify: Upwork Search 2",
+      "name": "Apify: Start Upwork 2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         260,
-        0
+        -20
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/run-sync-get-dataset-items",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/runs",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -90,23 +194,127 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"searchQueries\": [\"compliance content writer\", \"RFP writer health\"], \"maxItems\": 30}",
-        "options": {
-          "timeout": 300000
-        }
+        "options": {}
+      }
+    },
+    {
+      "id": "31c95831-6ab1-478d-8001-411c3f0cd522",
+      "name": "Apify: Wait Upwork 2",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        -20
+      ],
+      "webhookId": "b1a1c1d1-0001-4a1a-8a1a-000000000002",
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "41c95831-6ab1-478d-8001-411c3f0cd523",
+      "name": "Apify: Check Upwork 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        -20
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/actor-runs/{{ $('Apify: Start Upwork 2').item.json.data.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "51c95831-6ab1-478d-8001-411c3f0cd524",
+      "name": "Apify: Run Done? Upwork 2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -20
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "RUNNING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "61c95831-6ab1-478d-8001-411c3f0cd525",
+      "name": "Apify: Get Items Upwork 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        -80
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Apify: Start Upwork 2').item.json.data.defaultDatasetId }}/items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
       }
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd503",
-      "name": "Apify: Upwork Search 3",
+      "name": "Apify: Start Upwork 3",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         260,
-        120
+        180
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/run-sync-get-dataset-items",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/runs",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -119,9 +327,113 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"searchQueries\": [\"clinical content writer\", \"research writer\"], \"maxItems\": 30}",
-        "options": {
-          "timeout": 300000
-        }
+        "options": {}
+      }
+    },
+    {
+      "id": "31c95831-6ab1-478d-8001-411c3f0cd533",
+      "name": "Apify: Wait Upwork 3",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        180
+      ],
+      "webhookId": "b1a1c1d1-0001-4a1a-8a1a-000000000003",
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "41c95831-6ab1-478d-8001-411c3f0cd534",
+      "name": "Apify: Check Upwork 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        180
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/actor-runs/{{ $('Apify: Start Upwork 3').item.json.data.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "51c95831-6ab1-478d-8001-411c3f0cd535",
+      "name": "Apify: Run Done? Upwork 3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "RUNNING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "61c95831-6ab1-478d-8001-411c3f0cd536",
+      "name": "Apify: Get Items Upwork 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Apify: Start Upwork 3').item.json.data.defaultDatasetId }}/items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
       }
     },
     {
@@ -130,7 +442,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        500,
+        1220,
         0
       ],
       "parameters": {
@@ -139,16 +451,16 @@
     },
     {
       "id": "86dbca8c-674e-403c-9e82-78c8a7453083",
-      "name": "Apify: Company Sites",
+      "name": "Apify: Start Company Sites",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         260,
-        220
+        420
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_CRAWLER_ACTOR_ID}}/run-sync-get-dataset-items",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_CRAWLER_ACTOR_ID}}/runs",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -161,9 +473,113 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"startUrls\": [{\"url\": \"https://example-health-tech.com/careers\"}, {\"url\": \"https://example-legal-tech.com/blog\"}], \"maxCrawlPages\": 20}",
-        "options": {
-          "timeout": 300000
-        }
+        "options": {}
+      }
+    },
+    {
+      "id": "31c95831-6ab1-478d-8001-411c3f0cd544",
+      "name": "Apify: Wait Company Sites",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        420
+      ],
+      "webhookId": "b1a1c1d1-0001-4a1a-8a1a-000000000004",
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "41c95831-6ab1-478d-8001-411c3f0cd545",
+      "name": "Apify: Check Company Sites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        420
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/actor-runs/{{ $('Apify: Start Company Sites').item.json.data.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "51c95831-6ab1-478d-8001-411c3f0cd546",
+      "name": "Apify: Run Done? Company Sites",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{$json.data.status}}",
+              "rightValue": "RUNNING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "61c95831-6ab1-478d-8001-411c3f0cd547",
+      "name": "Apify: Get Items Company Sites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        420
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Apify: Start Company Sites').item.json.data.defaultDatasetId }}/items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
       }
     },
     {
@@ -172,8 +588,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        500,
-        220
+        1220,
+        420
       ],
       "parameters": {
         "jsCode": "// Same normalization for the website-crawler actor's output shape.\nreturn $input.all().map(item => {\n  const j = item.json;\n  return { json: {\n    title: j.title || j.pageTitle || 'Untitled',\n    description: j.text || j.bodyText || '',\n    url: j.url || '',\n    platform: 'Company Site',\n  }};\n});"
@@ -185,8 +601,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        760,
-        110
+        1480,
+        210
       ],
       "parameters": {
         "mode": "combine",
@@ -203,8 +619,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        980,
-        110
+        1700,
+        210
       ],
       "parameters": {
         "jsCode": "// Cheap filter BEFORE the OpenAI call, so scoring only runs on\n// plausible leads. Edit this list with Eisha as her niches shift.\nconst KEYWORDS = [\n  'medical', 'clinical', 'nutrition', 'health', 'legal', 'compliance',\n  'rfp', 'proposal', 'white paper', 'peer-reviewed', 'research writer',\n  'academic', 'dietitian', 'dietetics'\n];\n\nreturn $input.all().filter(item => {\n  const text = `${item.json.title} ${item.json.description}`.toLowerCase();\n  return KEYWORDS.some(k => text.includes(k));\n});"
@@ -216,8 +632,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1220,
-        110
+        1940,
+        210
       ],
       "parameters": {
         "batchSize": 1,
@@ -230,8 +646,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1480,
-        0
+        2200,
+        100
       ],
       "parameters": {
         "method": "GET",
@@ -267,8 +683,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1720,
-        0
+        2440,
+        100
       ],
       "parameters": {
         "conditions": {
@@ -298,8 +714,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1720,
-        200
+        2440,
+        300
       ],
       "parameters": {
         "method": "POST",
@@ -331,8 +747,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1960,
-        200
+        2680,
+        300
       ],
       "parameters": {
         "jsCode": "// The chat completion's message content is a JSON *string* -- parse it,\n// then attach the original scraped fields so nothing is lost.\nconst source = $('Loop Leads').item.json;\nconst content = $input.first().json.choices[0].message.content;\nlet ai;\ntry {\n  ai = JSON.parse(content);\n} catch (e) {\n  ai = {\n    client_name: 'Unknown',\n    need_summary: '',\n    budget_signal: 'Not specified',\n    fit_score: 0,\n    score_reasoning: 'AI response was not valid JSON -- check the prompt/model.',\n    urgency: 'Low',\n  };\n}\n\nreturn [{ json: {\n  title: source.title,\n  description: source.description,\n  url: source.url,\n  platform: source.platform,\n  client_name: ai.client_name,\n  need_summary: ai.need_summary,\n  budget_signal: ai.budget_signal,\n  fit_score: ai.fit_score,\n  score_reasoning: ai.score_reasoning,\n  urgency: ai.urgency,\n}}];"
@@ -344,8 +760,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2200,
-        200
+        2920,
+        300
       ],
       "parameters": {
         "method": "POST",
@@ -375,8 +791,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1220,
-        420
+        1940,
+        520
       ],
       "parameters": {
         "method": "GET",
@@ -408,8 +824,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1460,
-        420
+        2180,
+        520
       ],
       "parameters": {
         "jsCode": "const records = $input.first().json.records || [];\nconst rows = records.map(r => {\n  const f = r.fields;\n  return '<li><strong>' + f['Fit Score'] + '/10</strong> -- ' + f['Title'] + ' (' + f['Client/Company'] + ')<br/>' +\n    '<a href=\"' + f['Source URL'] + '\">View listing</a></li>';\n}).join('');\n\nreturn [{ json: {\n  count: records.length,\n  html: '<h2>' + records.length + ' strong lead(s) found today</h2><ul>' + rows + '</ul>'\n}}];"
@@ -421,8 +837,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1700,
-        420
+        2420,
+        520
       ],
       "parameters": {
         "conditions": {
@@ -452,8 +868,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        1940,
-        420
+        2660,
+        520
       ],
       "parameters": {
         "fromEmail": "={{$env.DIGEST_FROM_EMAIL}}",
@@ -470,22 +886,22 @@
       "main": [
         [
           {
-            "node": "Apify: Upwork Search 1",
+            "node": "Apify: Start Upwork 1",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Apify: Upwork Search 2",
+            "node": "Apify: Start Upwork 2",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Apify: Upwork Search 3",
+            "node": "Apify: Start Upwork 3",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Apify: Company Sites",
+            "node": "Apify: Start Company Sites",
             "type": "main",
             "index": 0
           }
@@ -496,29 +912,80 @@
       "main": [
         [
           {
-            "node": "Apify: Upwork Search 1",
+            "node": "Apify: Start Upwork 1",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Apify: Upwork Search 2",
+            "node": "Apify: Start Upwork 2",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Apify: Upwork Search 3",
+            "node": "Apify: Start Upwork 3",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Apify: Company Sites",
+            "node": "Apify: Start Company Sites",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Apify: Upwork Search 1": {
+    "Apify: Start Upwork 1": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Upwork 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Wait Upwork 1": {
+      "main": [
+        [
+          {
+            "node": "Apify: Check Upwork 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Check Upwork 1": {
+      "main": [
+        [
+          {
+            "node": "Apify: Run Done? Upwork 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Run Done? Upwork 1": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Upwork 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apify: Get Items Upwork 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Get Items Upwork 1": {
       "main": [
         [
           {
@@ -529,7 +996,58 @@
         ]
       ]
     },
-    "Apify: Upwork Search 2": {
+    "Apify: Start Upwork 2": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Upwork 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Wait Upwork 2": {
+      "main": [
+        [
+          {
+            "node": "Apify: Check Upwork 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Check Upwork 2": {
+      "main": [
+        [
+          {
+            "node": "Apify: Run Done? Upwork 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Run Done? Upwork 2": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Upwork 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apify: Get Items Upwork 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Get Items Upwork 2": {
       "main": [
         [
           {
@@ -540,7 +1058,58 @@
         ]
       ]
     },
-    "Apify: Upwork Search 3": {
+    "Apify: Start Upwork 3": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Upwork 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Wait Upwork 3": {
+      "main": [
+        [
+          {
+            "node": "Apify: Check Upwork 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Check Upwork 3": {
+      "main": [
+        [
+          {
+            "node": "Apify: Run Done? Upwork 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Run Done? Upwork 3": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Upwork 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apify: Get Items Upwork 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Get Items Upwork 3": {
       "main": [
         [
           {
@@ -562,7 +1131,58 @@
         ]
       ]
     },
-    "Apify: Company Sites": {
+    "Apify: Start Company Sites": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Wait Company Sites": {
+      "main": [
+        [
+          {
+            "node": "Apify: Check Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Check Company Sites": {
+      "main": [
+        [
+          {
+            "node": "Apify: Run Done? Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Run Done? Company Sites": {
+      "main": [
+        [
+          {
+            "node": "Apify: Wait Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apify: Get Items Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Get Items Company Sites": {
       "main": [
         [
           {
