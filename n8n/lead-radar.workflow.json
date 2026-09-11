@@ -39,7 +39,36 @@
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd51d",
-      "name": "Apify: Upwork Search",
+      "name": "Apify: Upwork Search 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        -120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/run-sync-get-dataset-items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"searchQueries\": [\"medical writer\", \"white paper nutrition\"], \"maxItems\": 30}",
+        "options": {
+          "timeout": 300000
+        }
+      }
+    },
+    {
+      "id": "21c95831-6ab1-478d-8001-411c3f0cd502",
+      "name": "Apify: Upwork Search 2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -60,9 +89,38 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"searchQueries\": [\"medical writer\", \"white paper nutrition\", \"compliance content writer\", \"RFP writer health\", \"clinical content writer\", \"research writer\"], \"maxItems\": 30}",
+        "jsonBody": "={\"searchQueries\": [\"compliance content writer\", \"RFP writer health\"], \"maxItems\": 30}",
         "options": {
-          "timeout": 120000
+          "timeout": 300000
+        }
+      }
+    },
+    {
+      "id": "21c95831-6ab1-478d-8001-411c3f0cd503",
+      "name": "Apify: Upwork Search 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/{{$env.APIFY_UPWORK_ACTOR_ID}}/run-sync-get-dataset-items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{$env.APIFY_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"searchQueries\": [\"clinical content writer\", \"research writer\"], \"maxItems\": 30}",
+        "options": {
+          "timeout": 300000
         }
       }
     },
@@ -104,7 +162,7 @@
         "specifyBody": "json",
         "jsonBody": "={\"startUrls\": [{\"url\": \"https://example-health-tech.com/careers\"}, {\"url\": \"https://example-legal-tech.com/blog\"}], \"maxCrawlPages\": 20}",
         "options": {
-          "timeout": 120000
+          "timeout": 300000
         }
       }
     },
