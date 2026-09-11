@@ -470,7 +470,17 @@
       "main": [
         [
           {
-            "node": "Apify: Upwork Search",
+            "node": "Apify: Upwork Search 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Upwork Search 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Upwork Search 3",
             "type": "main",
             "index": 0
           },
@@ -486,7 +496,17 @@
       "main": [
         [
           {
-            "node": "Apify: Upwork Search",
+            "node": "Apify: Upwork Search 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Upwork Search 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Upwork Search 3",
             "type": "main",
             "index": 0
           },
@@ -498,7 +518,29 @@
         ]
       ]
     },
-    "Apify: Upwork Search": {
+    "Apify: Upwork Search 1": {
+      "main": [
+        [
+          {
+            "node": "Normalize: Upwork",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Upwork Search 2": {
+      "main": [
+        [
+          {
+            "node": "Normalize: Upwork",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Upwork Search 3": {
       "main": [
         [
           {
