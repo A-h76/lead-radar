@@ -60,9 +60,10 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"searchQueries\": [\"medical writer\", \"white paper nutrition\"], \"maxItems\": 30}",
+        "jsonBody": "={\"query\": \"\\\"medical writer\\\" OR \\\"nutrition writer\\\" OR \\\"health content writer\\\" OR \\\"clinical content\\\"\", \"maxJobAge\": {\"value\": 24, \"unit\": \"hours\"}, \"paymentVerified\": true, \"experienceLevel\": [\"intermediate\", \"expert\"], \"jobType\": [\"fixed\", \"hourly\"], \"clientHistory\": [\"noHires\", \"1to9Hires\", \"10+Hires\"]}",
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd511",
@@ -77,7 +78,8 @@
       "parameters": {
         "amount": 15,
         "unit": "seconds"
-      }
+      },
+      "disabled": true
     },
     {
       "id": "41c95831-6ab1-478d-8001-411c3f0cd512",
@@ -101,7 +103,8 @@
           ]
         },
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd513",
@@ -140,7 +143,8 @@
           "combinator": "or"
         },
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "61c95831-6ab1-478d-8001-411c3f0cd514",
@@ -168,7 +172,9 @@
           ]
         },
         "options": {}
-      }
+      },
+      "alwaysOutputData": true,
+      "disabled": true
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd502",
@@ -193,9 +199,10 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"searchQueries\": [\"compliance content writer\", \"RFP writer health\"], \"maxItems\": 30}",
+        "jsonBody": "={\"query\": \"\\\"SaaS content writer\\\" OR \\\"B2B content writer\\\" OR \\\"technical content writer\\\" OR \\\"AI writer\\\"\", \"maxJobAge\": {\"value\": 24, \"unit\": \"hours\"}, \"paymentVerified\": true, \"experienceLevel\": [\"intermediate\", \"expert\"], \"jobType\": [\"fixed\", \"hourly\"], \"clientHistory\": [\"noHires\", \"1to9Hires\", \"10+Hires\"]}",
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd522",
@@ -210,7 +217,8 @@
       "parameters": {
         "amount": 15,
         "unit": "seconds"
-      }
+      },
+      "disabled": true
     },
     {
       "id": "41c95831-6ab1-478d-8001-411c3f0cd523",
@@ -234,7 +242,8 @@
           ]
         },
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd524",
@@ -273,7 +282,8 @@
           "combinator": "or"
         },
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "61c95831-6ab1-478d-8001-411c3f0cd525",
@@ -301,7 +311,9 @@
           ]
         },
         "options": {}
-      }
+      },
+      "alwaysOutputData": true,
+      "disabled": true
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd503",
@@ -326,9 +338,10 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"searchQueries\": [\"clinical content writer\", \"research writer\"], \"maxItems\": 30}",
+        "jsonBody": "={\"query\": \"\\\"white paper writer\\\" OR \\\"long-form explainer\\\" OR \\\"research writer\\\" OR \\\"thought leadership writer\\\"\", \"maxJobAge\": {\"value\": 24, \"unit\": \"hours\"}, \"paymentVerified\": true, \"experienceLevel\": [\"intermediate\", \"expert\"], \"jobType\": [\"fixed\", \"hourly\"], \"clientHistory\": [\"noHires\", \"1to9Hires\", \"10+Hires\"]}",
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd533",
@@ -343,7 +356,8 @@
       "parameters": {
         "amount": 15,
         "unit": "seconds"
-      }
+      },
+      "disabled": true
     },
     {
       "id": "41c95831-6ab1-478d-8001-411c3f0cd534",
@@ -367,7 +381,8 @@
           ]
         },
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd535",
@@ -406,7 +421,8 @@
           "combinator": "or"
         },
         "options": {}
-      }
+      },
+      "disabled": true
     },
     {
       "id": "61c95831-6ab1-478d-8001-411c3f0cd536",
@@ -434,7 +450,9 @@
           ]
         },
         "options": {}
-      }
+      },
+      "alwaysOutputData": true,
+      "disabled": true
     },
     {
       "id": "6ecdd4b7-9f26-46e4-9849-1b03bdc889a0",
@@ -446,7 +464,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Map whatever fields the chosen Upwork actor returns onto a common shape.\n// Adjust the right-hand field names to match your actor's actual output --\n// open one item in n8n's output panel after a test run to see the real keys.\nreturn $input.all().map(item => {\n  const j = item.json;\n  return { json: {\n    title: j.title || j.jobTitle || 'Untitled',\n    description: j.description || j.snippet || '',\n    url: j.url || j.link || '',\n    platform: 'Upwork',\n  }};\n});"
+        "jsCode": "// Map the Upwork actor's output onto a common shape.\n// Apify returns [] for an empty/failed run; with alwaysOutputData the node\n// upstream hands us a single {} item. Emit a sentinel instead of nothing --\n// a Code node that returns [] stops its whole branch with no error.\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: j.title || j.jobTitle || 'Untitled',\n  description: j.description || j.snippet || '',\n  url: j.url || j.link || '',\n  platform: 'Upwork',\n}})).filter(x => x.json.url);\nreturn leads.length ? leads : [{ json: { __empty: 'Upwork', __raw: rows.length } }];"
       }
     },
     {
@@ -472,7 +490,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"startUrls\": [{\"url\": \"https://example-health-tech.com/careers\"}, {\"url\": \"https://example-legal-tech.com/blog\"}], \"maxCrawlPages\": 20}",
+        "jsonBody": "={\"startUrls\": [{\"url\": \"https://cozyjobs.com/writing-jobs\"}, {\"url\": \"https://problogger.com/jobs/\"}], \"crawlerType\": \"playwright:adaptive\", \"maxCrawlPages\": 25, \"saveMarkdown\": true, \"removeCookieWarnings\": true, \"respectRobotsTxtFile\": true, \"proxyConfiguration\": {\"useApifyProxy\": true}}",
         "options": {}
       }
     },
@@ -580,7 +598,8 @@
           ]
         },
         "options": {}
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "id": "3aec07db-d4bf-4249-9375-f23fa72603ee",
@@ -592,7 +611,7 @@
         420
       ],
       "parameters": {
-        "jsCode": "// Same normalization for the website-crawler actor's output shape.\nreturn $input.all().map(item => {\n  const j = item.json;\n  return { json: {\n    title: j.title || j.pageTitle || 'Untitled',\n    description: j.text || j.bodyText || '',\n    url: j.url || '',\n    platform: 'Company Site',\n  }};\n});"
+        "jsCode": "// apify~website-content-crawler returns { url, text, markdown, metadata: {title, description} }.\n// Title lives under metadata, not at the top level.\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: (j.metadata && j.metadata.title) || j.title || 'Untitled',\n  description: j.text || j.markdown || '',\n  url: j.url || (j.metadata && j.metadata.canonicalUrl) || '',\n  platform: 'Company Site',\n}})).filter(x => x.json.url);\nreturn leads.length ? leads : [{ json: { __empty: 'Company Site', __raw: rows.length } }];"
       }
     },
     {
@@ -605,12 +624,8 @@
         210
       ],
       "parameters": {
-        "mode": "combine",
-        "combinationMode": "multiplex",
-        "mergeByFields": {
-          "values": []
-        },
-        "joinMode": "keepEverything"
+        "mode": "append",
+        "numberInputs": 2
       }
     },
     {
@@ -623,7 +638,7 @@
         210
       ],
       "parameters": {
-        "jsCode": "// Cheap filter BEFORE the OpenAI call, so scoring only runs on\n// plausible leads. Edit this list with Eisha as her niches shift.\nconst KEYWORDS = [\n  'medical', 'clinical', 'nutrition', 'health', 'legal', 'compliance',\n  'rfp', 'proposal', 'white paper', 'peer-reviewed', 'research writer',\n  'academic', 'dietitian', 'dietetics'\n];\n\nreturn $input.all().filter(item => {\n  const text = `${item.json.title} ${item.json.description}`.toLowerCase();\n  return KEYWORDS.some(k => text.includes(k));\n});"
+        "jsCode": "// Cheap filter BEFORE the OpenAI call, so scoring only runs on plausible leads.\n// Wide on purpose -- the model does the real tiering. Edit as niches shift.\nconst KEYWORDS = [\n  // Pillar 1: evidence-based nutrition & health\n  'medical', 'clinical', 'nutrition', 'dietitian', 'dietetics', 'health',\n  'healthcare', 'wellness', 'pharma', 'patient', 'peer-reviewed', 'evidence-based',\n  // Pillar 2: tech, SaaS, B2B, AI\n  'saas', 'b2b', 'technical writer', 'technology', 'software', 'api',\n  'developer', 'fintech', 'cybersecurity', 'machine learning', 'ai ', 'artificial intelligence',\n  // Core formats in either pillar\n  'white paper', 'whitepaper', 'long-form', 'explainer', 'research writer',\n  'thought leadership', 'case study', 'academic',\n  // Secondary tier -- let it through, let the model score it 4-6\n  'seo', 'blog', 'ghostwrit', 'copywriter', 'content writer', 'newsletter'\n];\n\nconst all = $input.all().map(i => i.json);\nconst empties = all.filter(j => j.__empty);\nconst leads = all.filter(j => !j.__empty);\n\n// ponytail: a FAILED/ABORTED Apify run also yields an empty dataset, so it\n// surfaces here rather than at the status check. Split the IF per terminal\n// status if you need to tell \"broken actor\" from \"no results today\".\nif (leads.length === 0) {\n  throw new Error(\n    'Every source returned 0 items (' +\n    empties.map(e => e.__empty).join(', ') +\n    '). Check the Apify actor IDs, the actor input schema, and APIFY_TOKEN.'\n  );\n}\n\n// Hard block: MSc in Nutrition, not an RD/RDN credential -- a posting that\n// demands one is an auto-rejection, so drop it before the paid OpenAI call.\n// \\bRDN?\\b is case-sensitive on purpose: lowercase \"rd\" is road/3rd/etc.\nconst NEEDS_RD = t => /\\bRDN?\\b/.test(t) || /registered dietitian|registered dietician/i.test(t);\n\nreturn leads\n  .filter(j => KEYWORDS.some(k => (j.title + ' ' + j.description).toLowerCase().includes(k)))\n  .filter(j => !NEEDS_RD(j.title + ' ' + j.description))\n  .map(json => ({ json }));"
       }
     },
     {
@@ -735,7 +750,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: \"You are screening freelance leads for a writer with an MSc in Human Nutrition & Dietetics who specializes in evidence-based health content, legal-adjacent writing, white papers, and academic/research writing. A GOOD lead requires subject-matter literacy: clinical accuracy, regulatory awareness, or primary-source research skills. A BAD lead is generic blog/SEO content, low-budget content-mill work, or anything unrelated to health, legal, or research writing. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or \\\\\\\"Not specified\\\\\\\"), fit_score (integer 1-10), score_reasoning (1 sentence, specific about credential fit), urgency (one of High, Medium, Low).\" }, { role: 'user', content: 'Listing title: ' + $json.title + '\\n\\nListing text: ' + $json.description } ] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You are screening freelance leads for a writer with an MSc in Human Nutrition and Dietetics who works across two core pillars: (1) evidence-based nutrition and health content that requires clinical accuracy and primary-source research, and (2) technology, AI, SaaS and B2B content that explains complex products to non-expert audiences. White papers and long-form explainers are core work in either pillar. TIER A, score 7-10: work in either core pillar that needs genuine subject-matter literacy - clinical accuracy, research skill, or the ability to explain a technical product credibly. TIER B, score 4-6: general commercial writing she accepts but does not specialize in - SEO blog posts, website and About copy, product descriptions, e-commerce content, email and social copy, executive ghostwriting. Score toward 6 when the budget is strong or the client sits in a core niche. TIER C, score 1-3: content-mill work, unrelated industries, no-budget or spammy postings, unpaid guest posts, or sites that charge writers to publish. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or Not specified), fit_score (integer 1-10), score_reasoning (1 sentence, specific about which pillar and tier and why), urgency (one of High, Medium, Low).' }, { role: 'user', content: 'Listing title: ' + $json.title + '\n\nListing text: ' + $json.description } ] }) }}",
         "options": {
           "timeout": 60000
         }
