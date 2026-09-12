@@ -32,9 +32,18 @@ assert.ok(!code('Keyword Pre-Filter').includes("'rfp'"));
 assert.ok(!/legal|compliance|RFP/.test(d.nodes.find(n=>n.name==='OpenAI: Score Lead').parameters.jsonBody));
 
 // Upwork branch is parked: neatrat~upwork-job-scraper hit its 100-result free-tier
-// lifetime cap. The 15 Apify nodes are disabled so the trigger item passes straight
-// through to Normalize: Upwork, which turns it into the __empty sentinel the
-// pre-filter already knows how to ignore. Re-enable = flip these 15 flags back.
+// lifetime cap. The 15 Apify nodes are disabled; a disabled node forwards its input on
+// output 0 only, so the trigger item reaches Normalize: Upwork (-> __empty sentinel)
+// only if every node's output 0 leads there. Re-enable = flip these 15 flags back.
+for (const n of d.nodes.filter(n=>n.name.startsWith('Apify: Run Done?'))) {
+  const src = n.name.replace('Run Done? ', '');
+  assert.equal(d.connections[n.name].main[0][0].node, src.replace('Apify: ', 'Apify: Get Items '), n.name+' output 0 must be "finished"');
+  assert.equal(d.connections[n.name].main[1][0].node, src.replace('Apify: ', 'Apify: Wait '), n.name+' output 1 must loop to Wait');
+  assert.ok(n.parameters.conditions.conditions.every(c=>c.operator.operation==='notEquals') && n.parameters.conditions.combinator==='and');
+}
+// OpenAI sits after the Airtable IF, so $json there is Airtable's response, not the lead
+const ob = d.nodes.find(n=>n.name==='OpenAI: Score Lead').parameters.jsonBody;
+assert.ok(!/\$json\./.test(ob) && !ob.includes('\n'), 'OpenAI body must read $(\'Loop Leads\') and contain no raw newline');
 assert.equal(d.nodes.filter(n=>n.disabled).length, 15);
 assert.ok(d.nodes.filter(n=>n.disabled).every(n=>/^Apify: .*Upwork \d$/.test(n.name)));
 assert.ok(!d.nodes.find(n=>n.name==='Normalize: Upwork').disabled);  // must stay on to emit the sentinel

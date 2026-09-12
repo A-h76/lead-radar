@@ -128,7 +128,7 @@
               "rightValue": "READY",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             },
             {
@@ -136,11 +136,11 @@
               "rightValue": "RUNNING",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       },
@@ -267,7 +267,7 @@
               "rightValue": "READY",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             },
             {
@@ -275,11 +275,11 @@
               "rightValue": "RUNNING",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       },
@@ -406,7 +406,7 @@
               "rightValue": "READY",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             },
             {
@@ -414,11 +414,11 @@
               "rightValue": "RUNNING",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       },
@@ -555,7 +555,7 @@
               "rightValue": "READY",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             },
             {
@@ -563,11 +563,11 @@
               "rightValue": "RUNNING",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       }
@@ -750,7 +750,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You are screening freelance leads for a writer with an MSc in Human Nutrition and Dietetics who works across two core pillars: (1) evidence-based nutrition and health content that requires clinical accuracy and primary-source research, and (2) technology, AI, SaaS and B2B content that explains complex products to non-expert audiences. White papers and long-form explainers are core work in either pillar. TIER A, score 7-10: work in either core pillar that needs genuine subject-matter literacy - clinical accuracy, research skill, or the ability to explain a technical product credibly. TIER B, score 4-6: general commercial writing she accepts but does not specialize in - SEO blog posts, website and About copy, product descriptions, e-commerce content, email and social copy, executive ghostwriting. Score toward 6 when the budget is strong or the client sits in a core niche. TIER C, score 1-3: content-mill work, unrelated industries, no-budget or spammy postings, unpaid guest posts, or sites that charge writers to publish. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or Not specified), fit_score (integer 1-10), score_reasoning (1 sentence, specific about which pillar and tier and why), urgency (one of High, Medium, Low).' }, { role: 'user', content: 'Listing title: ' + $json.title + '\n\nListing text: ' + $json.description } ] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You are screening freelance leads for a writer with an MSc in Human Nutrition and Dietetics who works across two core pillars: (1) evidence-based nutrition and health content that requires clinical accuracy and primary-source research, and (2) technology, AI, SaaS and B2B content that explains complex products to non-expert audiences. White papers and long-form explainers are core work in either pillar. TIER A, score 7-10: work in either core pillar that needs genuine subject-matter literacy - clinical accuracy, research skill, or the ability to explain a technical product credibly. TIER B, score 4-6: general commercial writing she accepts but does not specialize in - SEO blog posts, website and About copy, product descriptions, e-commerce content, email and social copy, executive ghostwriting. Score toward 6 when the budget is strong or the client sits in a core niche. TIER C, score 1-3: content-mill work, unrelated industries, no-budget or spammy postings, unpaid guest posts, or sites that charge writers to publish. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or Not specified), fit_score (integer 1-10), score_reasoning (1 sentence, specific about which pillar and tier and why), urgency (one of High, Medium, Low).' }, { role: 'user', content: 'Listing title: ' + $('Loop Leads').item.json.title + '\\n\\nListing text: ' + $('Loop Leads').item.json.description } ] }) }}",
         "options": {
           "timeout": 60000
         }
@@ -986,14 +986,14 @@
       "main": [
         [
           {
-            "node": "Apify: Wait Upwork 1",
+            "node": "Apify: Get Items Upwork 1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Apify: Get Items Upwork 1",
+            "node": "Apify: Wait Upwork 1",
             "type": "main",
             "index": 0
           }
@@ -1048,14 +1048,14 @@
       "main": [
         [
           {
-            "node": "Apify: Wait Upwork 2",
+            "node": "Apify: Get Items Upwork 2",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Apify: Get Items Upwork 2",
+            "node": "Apify: Wait Upwork 2",
             "type": "main",
             "index": 0
           }
@@ -1110,14 +1110,14 @@
       "main": [
         [
           {
-            "node": "Apify: Wait Upwork 3",
+            "node": "Apify: Get Items Upwork 3",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Apify: Get Items Upwork 3",
+            "node": "Apify: Wait Upwork 3",
             "type": "main",
             "index": 0
           }
@@ -1183,14 +1183,14 @@
       "main": [
         [
           {
-            "node": "Apify: Wait Company Sites",
+            "node": "Apify: Get Items Company Sites",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Apify: Get Items Company Sites",
+            "node": "Apify: Wait Company Sites",
             "type": "main",
             "index": 0
           }
