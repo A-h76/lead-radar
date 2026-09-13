@@ -455,12 +455,26 @@
       "disabled": true
     },
     {
+      "id": "7d460766-2020-437d-b42d-0188883cbc59",
+      "name": "Merge Upwork",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 3
+      }
+    },
+    {
       "id": "6ecdd4b7-9f26-46e4-9849-1b03bdc889a0",
       "name": "Normalize: Upwork",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1220,
+        1290,
         0
       ],
       "parameters": {
@@ -490,7 +504,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"startUrls\": [{\"url\": \"https://cozyjobs.com/writing-jobs\"}, {\"url\": \"https://problogger.com/jobs/\"}], \"crawlerType\": \"playwright:adaptive\", \"maxCrawlPages\": 25, \"saveMarkdown\": true, \"removeCookieWarnings\": true, \"respectRobotsTxtFile\": true, \"proxyConfiguration\": {\"useApifyProxy\": true}}",
+        "jsonBody": "={\"startUrls\":[{\"url\":\"https://cozyjobs.com/writing-jobs\"},{\"url\":\"https://problogger.com/jobs/\"}],\"crawlerType\":\"playwright:adaptive\",\"maxCrawlPages\":25,\"saveMarkdown\":true,\"removeCookieWarnings\":true,\"respectRobotsTxtFile\":true,\"proxyConfiguration\":{\"useApifyProxy\":true},\"includeUrlGlobs\":[{\"glob\":\"https://problogger.com/jobs/job/**\"},{\"glob\":\"https://cozyjobs.com/jobs/**\"}]}",
         "options": {}
       }
     },
@@ -611,7 +625,7 @@
         420
       ],
       "parameters": {
-        "jsCode": "// apify~website-content-crawler returns { url, text, markdown, metadata: {title, description} }.\n// Title lives under metadata, not at the top level.\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: (j.metadata && j.metadata.title) || j.title || 'Untitled',\n  description: j.text || j.markdown || '',\n  url: j.url || (j.metadata && j.metadata.canonicalUrl) || '',\n  platform: 'Company Site',\n}})).filter(x => x.json.url);\nreturn leads.length ? leads : [{ json: { __empty: 'Company Site', __raw: rows.length } }];"
+        "jsCode": "// apify~website-content-crawler returns { url, text, markdown, metadata: {title, description} }.\n// Title lives under metadata, not at the top level.\n// Keep only individual job posts -- the crawler also saves the board/list pages it starts from.\nconst JOB_URL = /^https:\\/\\/(problogger\\.com\\/jobs\\/job\\/|cozyjobs\\.com\\/jobs\\/)/;\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: (j.metadata && j.metadata.title) || j.title || 'Untitled',\n  description: j.text || j.markdown || '',\n  url: j.url || (j.metadata && j.metadata.canonicalUrl) || '',\n  platform: 'Company Site',\n}})).filter(x => JOB_URL.test(x.json.url));\nreturn leads.length ? leads : [{ json: { __empty: 'Company Site', __raw: rows.length } }];"
       }
     },
     {
@@ -638,7 +652,7 @@
         210
       ],
       "parameters": {
-        "jsCode": "// Cheap filter BEFORE the OpenAI call, so scoring only runs on plausible leads.\n// Wide on purpose -- the model does the real tiering. Edit as niches shift.\nconst KEYWORDS = [\n  // Pillar 1: evidence-based nutrition & health\n  'medical', 'clinical', 'nutrition', 'dietitian', 'dietetics', 'health',\n  'healthcare', 'wellness', 'pharma', 'patient', 'peer-reviewed', 'evidence-based',\n  // Pillar 2: tech, SaaS, B2B, AI\n  'saas', 'b2b', 'technical writer', 'technology', 'software', 'api',\n  'developer', 'fintech', 'cybersecurity', 'machine learning', 'ai ', 'artificial intelligence',\n  // Core formats in either pillar\n  'white paper', 'whitepaper', 'long-form', 'explainer', 'research writer',\n  'thought leadership', 'case study', 'academic',\n  // Secondary tier -- let it through, let the model score it 4-6\n  'seo', 'blog', 'ghostwrit', 'copywriter', 'content writer', 'newsletter'\n];\n\nconst all = $input.all().map(i => i.json);\nconst empties = all.filter(j => j.__empty);\nconst leads = all.filter(j => !j.__empty);\n\n// ponytail: a FAILED/ABORTED Apify run also yields an empty dataset, so it\n// surfaces here rather than at the status check. Split the IF per terminal\n// status if you need to tell \"broken actor\" from \"no results today\".\nif (leads.length === 0) {\n  throw new Error(\n    'Every source returned 0 items (' +\n    empties.map(e => e.__empty).join(', ') +\n    '). Check the Apify actor IDs, the actor input schema, and APIFY_TOKEN.'\n  );\n}\n\n// Hard block: MSc in Nutrition, not an RD/RDN credential -- a posting that\n// demands one is an auto-rejection, so drop it before the paid OpenAI call.\n// \\bRDN?\\b is case-sensitive on purpose: lowercase \"rd\" is road/3rd/etc.\nconst NEEDS_RD = t => /\\bRDN?\\b/.test(t) || /registered dietitian|registered dietician/i.test(t);\n\nreturn leads\n  .filter(j => KEYWORDS.some(k => (j.title + ' ' + j.description).toLowerCase().includes(k)))\n  .filter(j => !NEEDS_RD(j.title + ' ' + j.description))\n  .map(json => ({ json }));"
+        "jsCode": "// Cheap filter BEFORE the OpenAI call, so scoring only runs on plausible leads.\n// Wide on purpose -- the model does the real tiering. Edit as niches shift.\nconst KEYWORDS = [\n  // Pillar 1: evidence-based nutrition & health\n  'medical', 'clinical', 'nutrition', 'dietitian', 'dietetics', 'health',\n  'healthcare', 'wellness', 'pharma', 'patient', 'peer-reviewed', 'evidence-based',\n  // Pillar 2: tech, SaaS, B2B, AI\n  'saas', 'b2b', 'technical writer', 'technology', 'software', 'api',\n  'developer', 'fintech', 'cybersecurity', 'machine learning', 'ai ', 'artificial intelligence',\n  // Core formats in either pillar\n  'white paper', 'whitepaper', 'long-form', 'explainer', 'research writer',\n  'thought leadership', 'case study', 'academic',\n  // Secondary tier -- let it through, let the model score it 4-6\n  'seo', 'blog', 'ghostwrit', 'copywriter', 'content writer', 'newsletter'\n];\n\nconst all = $input.all().map(i => i.json);\nconst empties = all.filter(j => j.__empty);\nconst leads = all.filter(j => !j.__empty);\n\n// ponytail: a FAILED/ABORTED Apify run also yields an empty dataset, so it\n// surfaces here rather than at the status check. Split the IF per terminal\n// status if you need to tell \"broken actor\" from \"no results today\".\nif (leads.length === 0) {\n  throw new Error(\n    'Every source returned 0 items (' +\n    empties.map(e => e.__empty).join(', ') +\n    '). Check the Apify actor IDs, the actor input schema, and APIFY_TOKEN.'\n  );\n}\n\n// Hard block: MSc in Nutrition, not an RD/RDN credential -- a posting that\n// demands one is an auto-rejection, so drop it before the paid OpenAI call.\n// \\bRDN?\\b is case-sensitive on purpose: lowercase \"rd\" is road/3rd/etc.\nconst NEEDS_RD = t => /\\bRDN?\\b/.test(t) || /registered dietitian|registered dietician/i.test(t);\n\nreturn leads\n  .filter(j => KEYWORDS.some(k => (j.title + ' ' + j.description).toLowerCase().replace(/problogger/g, '').includes(k)))\n  .filter(j => !NEEDS_RD(j.title + ' ' + j.description))\n  .map(json => ({ json }));"
       }
     },
     {
@@ -1004,7 +1018,7 @@
       "main": [
         [
           {
-            "node": "Normalize: Upwork",
+            "node": "Merge Upwork",
             "type": "main",
             "index": 0
           }
@@ -1066,9 +1080,9 @@
       "main": [
         [
           {
-            "node": "Normalize: Upwork",
+            "node": "Merge Upwork",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -1128,9 +1142,9 @@
       "main": [
         [
           {
-            "node": "Normalize: Upwork",
+            "node": "Merge Upwork",
             "type": "main",
-            "index": 0
+            "index": 2
           }
         ]
       ]
@@ -1348,6 +1362,17 @@
         [
           {
             "node": "Email Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Upwork": {
+      "main": [
+        [
+          {
+            "node": "Normalize: Upwork",
             "type": "main",
             "index": 0
           }

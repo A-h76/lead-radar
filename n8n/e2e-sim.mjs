@@ -8,10 +8,13 @@ const WF = JSON.parse(fs.readFileSync(new URL('./lead-radar.workflow.json', impo
 
 // ---- mocks -----------------------------------------------------------------------------------
 const CRAWL_ROWS = [
-  { url: 'https://problogger.com/jobs/1', text: 'We need an evidence-based nutrition writer for our clinic blog. $0.20/word.', metadata: { title: 'Nutrition Content Writer' } },
-  { url: 'https://problogger.com/jobs/2', text: 'Nutrition writer. Must be an RD.', metadata: { title: 'Dietitian Writer' } },
-  { url: 'https://cozyjobs.com/writing-jobs/3', text: 'Drain cleaning quotes', metadata: { title: 'Plumbing copy' } },
-  { url: 'https://cozyjobs.com/writing-jobs/4', text: 'B2B SaaS white paper on API security', metadata: { title: 'SaaS White Paper Writer' } },
+  // start/list pages the crawler also saves -- must never become leads
+  { url: 'https://problogger.com/jobs/', text: 'Jobs - ProBlogger Jobs\n17 Active Jobs\nUS Freelance', metadata: { title: 'Jobs - ProBlogger Jobs' } },
+  { url: 'https://cozyjobs.com/writing-jobs', text: 'Writing Jobs', metadata: { title: 'Writing Jobs | CozyJobs' } },
+  { url: 'https://problogger.com/jobs/job/nutrition-content-writer/', text: 'We need an evidence-based nutrition writer for our clinic. $0.20/word.', metadata: { title: 'Nutrition Content Writer - ProBlogger Jobs' } },
+  { url: 'https://problogger.com/jobs/job/dietitian-writer/', text: 'Nutrition writer. Must be an RD.', metadata: { title: 'Dietitian Writer - ProBlogger Jobs' } },
+  { url: 'https://problogger.com/jobs/job/greenhouse-gardening-writer/', text: 'Garden product descriptions', metadata: { title: 'Greenhouse Gardening Writer - ProBlogger Jobs' } }, // only "blog" hit is the site name
+  { url: 'https://cozyjobs.com/jobs/38bd7fd9-4664-4406-bbeb-29c8d4e44f61/saas-white-paper-writer', text: 'B2B SaaS white paper on API security', metadata: { title: 'SaaS White Paper Writer | CozyJobs' } },
 ];
 const UPWORK_ROWS = [{ title: 'Medical writer for clinical trial summaries', description: 'Pharma', url: 'https://upwork.com/jobs/~01' }];
 const ACTOR_ID = /^([A-Za-z0-9]{17}|[\w.-]+~[\w.-]+)$/;               // Apify: "user~name" or 17-char id; "user/name" 404s in a URL path
@@ -34,6 +37,7 @@ function mockHttp(req, sc) {
         if (extra.length) bad(400, 'crawler input has unknown keys ' + extra);
         if (!Array.isArray(b.startUrls) || !b.startUrls.every(s => /^https?:\/\//.test(s.url))) bad(400, 'startUrls invalid');
         if (!WCC_CRAWLERS.includes(b.crawlerType)) bad(400, 'crawlerType invalid');
+        if (b.includeUrlGlobs && !b.includeUrlGlobs.every(g => typeof g.glob === 'string')) bad(400, 'includeUrlGlobs must be [{glob}]');
       }
       const run = `run_${id.includes('crawler') ? 'cs' : 'up'}_${++sc.runs}`;
       sc.polls[run] = 0;
@@ -60,7 +64,8 @@ function mockHttp(req, sc) {
     if (req.method === 'GET' && u.searchParams.has('maxRecords')) {
       const f = u.searchParams.get('filterByFormula');
       if (/undefined/.test(f)) bad(422, 'filterByFormula has undefined url: ' + f);
-      return { records: sc.existingUrls.some(x => f.includes(x)) ? [{ id: 'rec1' }] : [] };
+      const dup = sc.existingUrls.some(x => f.includes(x)) || sc.created.some(c => f.includes('"' + c['Source URL'] + '"'));
+      return { records: dup ? [{ id: 'rec1' }] : [] };
     }
     if (req.method === 'POST') { sc.created.push(req.body.fields); return { id: 'recNew', fields: req.body.fields }; }
     return { records: sc.created.filter(f => f['Fit Score'] >= 7).map(fields => ({ fields })) };
@@ -142,21 +147,28 @@ function simulate(sc) {
 
   const stack = [{ name: sc.trigger, items: [{ json: {} }], from: null }];
   const mergeBuf = {};
+  const cat = s => Object.keys(s).sort().flatMap(k => s[k]);
   let steps = 0;
   while (stack.length || Object.keys(mergeBuf).length) {
-    if (!stack.length) {                                                     // v1: run a waiting merge with what it has
-      const [name, buf] = Object.entries(mergeBuf)[0]; delete mergeBuf[name];
-      stack.push({ name, items: [...(buf[0] || []), ...(buf[1] || [])], from: 'merge(partial:' + Object.keys(buf) + ')' });
+    if (!stack.length) {                                                     // v1: stack empty -> run a leftover merge slot with what it has
+      const [name, slots] = Object.entries(mergeBuf)[0], s = slots.shift();
+      if (!slots.length) delete mergeBuf[name];
+      stack.push({ name, items: cat(s), from: 'merge(partial:' + Object.keys(s) + ')' });
       continue;
     }
     const { name, items, from, idx } = stack.shift();
     const node = byName[name];
     if (++steps > sc.maxSteps) return { sc, trace, error: { node: name, message: `Infinite loop: >${sc.maxSteps} node executions. Last 8: ${trace.slice(-8).map(t => t.node).join(' -> ')}` } };
     if (node.type === 'n8n-nodes-base.merge' && from !== null && !String(from).startsWith('merge')) {
-      const buf = mergeBuf[name] ??= {}; (buf[idx] ??= []).push(...items);
-      if (Object.keys(buf).length < node.parameters.numberInputs) continue;
-      delete mergeBuf[name];
-      stack.unshift({ name, items: [...buf[0], ...buf[1]], from: 'merge(all)' });
+      // n8n keeps one slot per run: a second arrival on an already-filled input opens a new slot
+      const slots = mergeBuf[name] ??= [];
+      let s = slots.find(s => !(idx in s));
+      if (!s) slots.push(s = {});
+      s[idx] = items;
+      if (Object.keys(s).length < node.parameters.numberInputs) continue;
+      slots.splice(slots.indexOf(s), 1);
+      if (!slots.length) delete mergeBuf[name];
+      stack.unshift({ name, items: cat(s), from: 'merge(all)' });
       continue;
     }
     const firstEntry = node.type === 'n8n-nodes-base.splitInBatches' && from !== 'Is New Lead?' && from !== 'Airtable: Create Lead' ? 'fresh' : idx;
@@ -178,7 +190,7 @@ function simulate(sc) {
 // ---- scenarios -------------------------------------------------------------------------------
 const FAKE_ENV = { APIFY_TOKEN: 'apify_t', APIFY_CRAWLER_ACTOR_ID: 'apify~website-content-crawler', APIFY_UPWORK_ACTOR_ID: 'neatrat~upwork-job-scraper',
   OPENAI_API_KEY: 'sk-x', AIRTABLE_API_KEY: 'pat_x', AIRTABLE_BASE_ID: 'appX', DIGEST_FROM_EMAIL: 'a@x', DIGEST_TO_EMAIL: 'b@x' };
-const mk = o => ({ trigger: 'Manual Run (Webhook)', env: FAKE_ENV, runStatus: 'SUCCEEDED', crawlRows: CRAWL_ROWS, existingUrls: ['cozyjobs.com/writing-jobs/4'],
+const mk = o => ({ trigger: 'Manual Run (Webhook)', env: FAKE_ENV, runStatus: 'SUCCEEDED', crawlRows: CRAWL_ROWS, existingUrls: ['cozyjobs.com/jobs/38bd7fd9'],
   maxSteps: 400, runs: 0, polls: {}, requests: [], openaiBodies: [], created: [], emails: [], ...o });
 const withNodes = (patch, fn) => { const saved = WF.nodes.map(n => ({ ...n })); WF.nodes.forEach(patch); try { return fn(); } finally { WF.nodes.forEach((n, i) => { for (const k in n) delete n[k]; Object.assign(n, saved[i]); }); } };
 

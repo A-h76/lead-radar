@@ -51,6 +51,12 @@ assert.ok(!d.nodes.find(n=>n.name==='Apify: Start Company Sites').disabled);
 
 // Merge is append, Get Items always emit
 assert.equal(d.nodes.find(n=>n.name==='Merge Sources').parameters.mode,'append');
+// Normalize: Upwork must run once. With 3 direct parents it ran 3 times, and n8n executed the 2
+// leftover Merge Sources runs after the loop with only the Upwork sentinel -> "0 items (Upwork)".
+const into = n => Object.entries(d.connections).flatMap(([s,c]) => c.main.flat().filter(o=>o.node===n).map(()=>s));
+assert.deepEqual(into('Normalize: Upwork'), ['Merge Upwork']);
+const mu = d.nodes.find(n=>n.name==='Merge Upwork');
+assert.ok(mu.parameters.numberInputs === 3 && mu.parameters.mode === 'append' && !mu.disabled);
 assert.equal(d.nodes.filter(n=>n.alwaysOutputData).length,4);
 // actor input must match the real schemas -- perPage/pagesToScrape do not exist on the Upwork actor
 const ALLOWED = ['query','maxJobAge','paymentVerified','experienceLevel','jobType','clientHistory'];
@@ -64,4 +70,12 @@ for (const n of d.nodes.filter(n=>n.name.startsWith('Apify: Start Upwork'))) {
 const cs = JSON.parse(d.nodes.find(n=>n.name==='Apify: Start Company Sites').parameters.jsonBody.slice(1));
 assert.ok(cs.crawlerType.startsWith('playwright'));  // both boards render client-side
 assert.ok(!JSON.stringify(cs).includes('example-'), 'placeholder URLs still present');
+// list pages never become leads: the crawler follows only job-post links, Normalize drops the rest
+assert.deepEqual(cs.includeUrlGlobs.map(g=>g.glob), ['https://problogger.com/jobs/job/**','https://cozyjobs.com/jobs/**']);
+const ncs = code('Normalize: Company Sites');
+for (const url of ['https://problogger.com/jobs/','https://cozyjobs.com/writing-jobs'])
+  assert.equal(run(ncs,[{url,text:'Nutrition writer jobs',metadata:{title:'Jobs'}}])[0].json.__empty,'Company Site',url);
+assert.equal(run(ncs,[{url:'https://problogger.com/jobs/job/x/',text:'t',metadata:{title:'X'}}])[0].json.platform,'Company Site');
+// "ProBlogger" is in every job page title; it must not satisfy the 'blog' keyword
+assert.equal(run(kf,[{title:'Garden writer - ProBlogger Jobs',description:'Product descriptions',url:'u'}]).length,0);
 console.log('all checks pass');
