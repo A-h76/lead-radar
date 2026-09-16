@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRunState, recordTrigger } from "@/lib/run-status";
+import { fetchWithTimeout } from "@/lib/http";
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
 
@@ -15,7 +16,13 @@ export async function POST() {
   }
 
   try {
-    const res = await fetch(N8N_WEBHOOK_URL, { method: "POST" });
+    // No retry: if n8n already accepted the run but the response was lost,
+    // retrying here would start a second scrape/scoring pass.
+    const res = await fetchWithTimeout(
+      N8N_WEBHOOK_URL,
+      { method: "POST" },
+      { timeoutMs: 10000, retries: 0 }
+    );
     if (!res.ok) {
       throw new Error(`n8n responded ${res.status}`);
     }

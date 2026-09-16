@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { signSessionToken } from "@/lib/auth";
 
 // Single-client tool, so a shared password gate is the whole auth system.
 // Ponytail: add real per-user auth only if this ever serves more than one client.
@@ -22,7 +23,7 @@ export function proxy(request: NextRequest) {
   if (!appPassword) return NextResponse.next();
 
   const cookie = request.cookies.get(COOKIE_NAME)?.value;
-  if (cookie === appPassword) return NextResponse.next();
+  if (cookie === signSessionToken(appPassword)) return NextResponse.next();
 
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("from", pathname);

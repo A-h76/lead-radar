@@ -57,10 +57,22 @@ function mockHttp(req, sc) {
     if (b.model !== 'gpt-4o-mini' || b.messages?.length !== 2 || !b.messages.every(x => typeof x.content === 'string')) bad(400, 'malformed chat body');
     if (/undefined/.test(b.messages[1].content)) bad(400, 'user message contains "undefined" -- lead fields missing');
     sc.openaiBodies.push(b);
-    return { choices: [{ message: { content: JSON.stringify({ client_name: 'Acme', need_summary: 'x', budget_signal: '$', fit_score: 8, score_reasoning: 'Pillar 1 Tier A', urgency: 'High' }) } }] };
+    return { choices: [{ message: { content: JSON.stringify({
+      client_name: 'Acme', need_summary: 'x', budget_signal: '$',
+      skill_fit_score: 8, value_score: 7, confidence: 'High', score_reasoning: 'Pillar 1 Tier A',
+      recommended_action: 'Apply', niche_tag: 'health-nutrition',
+      verified_facts: ['fact one'], inferred_signals: ['guess one'], unknown_factors: [],
+      positive_signals: ['good fit'], negative_signals: [], urgency: 'High',
+    }) } }] };
   }
   if (u.host === 'api.airtable.com') {
     if (!sc.env.AIRTABLE_BASE_ID || !sc.env.AIRTABLE_API_KEY) bad(404, 'Airtable base/key missing');
+    const table = decodeURIComponent(u.pathname.split('/').pop());
+    if (table === 'Runs') {
+      if (req.method !== 'POST') bad(404, 'Runs table is write-only in this mock');
+      sc.runsCreated.push(req.body.fields);
+      return { id: 'run_rec_' + sc.runsCreated.length, fields: req.body.fields };
+    }
     if (req.method === 'GET' && u.searchParams.has('maxRecords')) {
       const f = u.searchParams.get('filterByFormula');
       if (/undefined/.test(f)) bad(422, 'filterByFormula has undefined url: ' + f);
@@ -85,6 +97,8 @@ function simulate(sc) {
   const ctxFor = (item, items) => ({
     $json: item?.json ?? {}, $env: sc.env, $input: { all: () => items, first: () => items[0], item },
     $now: { toISO: () => '2026-09-13T06:00:00.000Z' },
+    $execution: { id: 'exec_e2e_1' },
+    $getWorkflowStaticData: () => sc.staticData,
     $: n => { if (!last[n]) throw new Error(`Referenced node "${n}" has not run`); return { item: last[n][0], first: () => last[n][0], all: () => last[n] }; },
   });
   const run = (src, ctx) => new Function(...Object.keys(ctx), src)(...Object.values(ctx));
@@ -191,7 +205,7 @@ function simulate(sc) {
 const FAKE_ENV = { APIFY_TOKEN: 'apify_t', APIFY_CRAWLER_ACTOR_ID: 'apify~website-content-crawler', APIFY_UPWORK_ACTOR_ID: 'neatrat~upwork-job-scraper',
   OPENAI_API_KEY: 'sk-x', AIRTABLE_API_KEY: 'pat_x', AIRTABLE_BASE_ID: 'appX', DIGEST_FROM_EMAIL: 'a@x', DIGEST_TO_EMAIL: 'b@x' };
 const mk = o => ({ trigger: 'Manual Run (Webhook)', env: FAKE_ENV, runStatus: 'SUCCEEDED', crawlRows: CRAWL_ROWS, existingUrls: ['cozyjobs.com/jobs/38bd7fd9'],
-  maxSteps: 400, runs: 0, polls: {}, requests: [], openaiBodies: [], created: [], emails: [], ...o });
+  maxSteps: 400, runs: 0, polls: {}, requests: [], openaiBodies: [], created: [], runsCreated: [], staticData: {}, emails: [], ...o });
 const withNodes = (patch, fn) => { const saved = WF.nodes.map(n => ({ ...n })); WF.nodes.forEach(patch); try { return fn(); } finally { WF.nodes.forEach((n, i) => { for (const k in n) delete n[k]; Object.assign(n, saved[i]); }); } };
 
 // The fix, applied to an in-memory copy only: IF output 0 = run finished -> Get Items, so a disabled IF
@@ -223,7 +237,29 @@ const SCENARIOS = {
   'D  as-is with README-style actor id "apify/website-content-crawler"': () => simulate(mk({ env: { ...FAKE_ENV, APIFY_CRAWLER_ACTOR_ID: 'apify/website-content-crawler' } })),
   'E  Upwork re-enabled, crawler run FAILED (empty datasets)': () => withNodes(n => { if (n.disabled) n.disabled = false; }, () => simulate(mk({ runStatus: 'FAILED' }))),
   'F  Upwork re-enabled, no env vars set': () => withNodes(n => { if (n.disabled) n.disabled = false; }, () => simulate(mk({ env: {} }))),
+  'J  PROPOSED FIX, Daily Schedule trigger -> digest should fire': () =>
+    withFix(() => simulate(mk({ trigger: 'Daily Schedule' }))),
+  'K  PROPOSED FIX, Manual trigger -> digest must NOT fire (repeat-click guard)': () =>
+    withFix(() => simulate(mk({ trigger: 'Manual Run (Webhook)' }))),
+  'L  PROPOSED FIX, Upwork re-enabled + crawler run FAILED -> a healthy-looking Runs record must NOT be written':
+    () => withFix(() => withNodes(n => { if (n.disabled) n.disabled = false; }, () => simulate(mk({ runStatus: 'FAILED' })))),
+  'M  PROPOSED FIX, Upwork re-enabled + no env vars -> crash before any source runs, Runs write never reached':
+    () => withFix(() => withNodes(n => { if (n.disabled) n.disabled = false; }, () => simulate(mk({ env: {} })))),
 };
+
+// A hard failure must never let the run look healthy: the main workflow's own Runs-writer
+// ("Write Run Record" -> "Airtable: Write Run") must NOT fire when the execution crashes --
+// that gap is exactly what the separate error-handler workflow exists to fill (see
+// n8n/check-error-workflow.mjs). If this assertion ever fails, a broken source would start
+// silently reading as "0 opportunities today" instead of "system failure".
+import assert from 'assert';
+for (const label of ['L  PROPOSED FIX, Upwork re-enabled + crawler run FAILED -> a healthy-looking Runs record must NOT be written',
+  'M  PROPOSED FIX, Upwork re-enabled + no env vars -> crash before any source runs, Runs write never reached']) {
+  const r = SCENARIOS[label]();
+  assert.ok(r.error, `scenario "${label}" was expected to crash but completed`);
+  assert.equal(r.sc.runsCreated.length, 0, `scenario "${label}" must not have written a Runs record`);
+}
+console.log('failure-visibility check: a crashed run never writes a healthy-looking Runs record -- OK\n');
 
 const short = v => { const s = JSON.stringify(v) ?? ''; return s.length > 400 ? s.slice(0, 400) + '...' : s; };
 console.log('$env vars referenced by the workflow:', ENV_REFS.join(', '));
@@ -234,10 +270,10 @@ for (const [label, fn] of Object.entries(SCENARIOS)) {
   const counts = {};
   for (const t of r.trace) counts[t.node] = (counts[t.node] || 0) + 1;
   console.log('node executions:', Object.entries(counts).map(([n, c]) => `${n}${c > 1 ? ' x' + c : ''}`).join(' | '));
-  const tail = r.trace.filter(t => /Normalize|Merge|Pre-Filter|Score|Create|Digest|Top/.test(t.node));
+  const tail = r.trace.filter(t => /Normalize|Merge|Pre-Filter|Score|Create|Digest|Top|Scheduled/.test(t.node));
   for (const t of tail.slice(0, 30)) console.log(`  ${t.node}: in=${t.in} out=${t.out ?? 'ERR'} ${t.output ? short(t.output.flat().map(i => i.json)) : ''}`);
   const s = r.sc;
-  if (s) console.log(`  OpenAI calls=${s.openaiBodies.length} (user msgs: ${short(s.openaiBodies.map(b => b.messages[1].content.slice(0, 60)))})\n  Airtable created=${s.created.length} ${short(s.created.map(f => f['Source URL']))}\n  emails=${short(s.emails)}`);
+  if (s) console.log(`  OpenAI calls=${s.openaiBodies.length} (user msgs: ${short(s.openaiBodies.map(b => b.messages[1].content.slice(0, 60)))})\n  Airtable created=${s.created.length} ${short(s.created.map(f => f['Source URL']))}\n  emails=${short(s.emails)}\n  Runs record: ${short(s.runsCreated[0])}`);
   if (r.error) console.log(`  FAIL at "${r.error.node}": ${r.error.message}\n  input: ${short(r.error.input)}`);
   else console.log('  OK -- completed');
 }

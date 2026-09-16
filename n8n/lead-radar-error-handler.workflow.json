@@ -1,0 +1,91 @@
+{
+  "name": "Eisha - Lead Radar - Error Handler",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-4a1a-8a1a-000000000001",
+      "name": "On Any Failure",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "a1b2c3d4-0001-4a1a-8a1a-000000000002",
+      "name": "Build Failure Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Best-effort read of n8n's Error Trigger payload -- its exact shape has\n// varied across n8n versions (same caveat as the Loop Leads output-order\n// note in the main workflow's README). After importing both workflows,\n// trigger a real failure (e.g. a bad APIFY_TOKEN) and check this node's\n// output against the paths below -- adjust if your n8n version differs.\n//\n// The point of this node existing at all: without it, a crash in the main\n// workflow (an Apify/Airtable/OpenAI call that exhausts its retries) is\n// visible only in n8n's own execution log, which nobody checks day to day.\n// This turns that into a \"Failed\" row in the same Runs table the healthy\n// path writes to, so the dashboard can surface it.\nconst e = $json.execution || {};\nconst err = e.error || {};\nconst wf = $json.workflow || {};\n\nreturn [{ json: {\n  runId: e.id || 'unknown',\n  trigger: ($json.trigger && $json.trigger.mode) || e.mode || 'Unknown',\n  startedAt: e.startedAt || $now.toISO(),\n  endedAt: $now.toISO(),\n  durationSec: '',\n  overallStatus: 'Failed',\n  sourceStatus: 'Unknown -- workflow crashed before reaching source-stats collection',\n  itemsDiscovered: '',\n  itemsFiltered: '',\n  newOpportunities: '',\n  duplicates: '',\n  aiAnalyses: '',\n  aiFailures: '',\n  errors: (err.node && err.node.name ? err.node.name + ': ' : '') + (err.message || ('Unknown error -- check this execution in n8n: ' + (e.url || wf.id || ''))),\n}}];"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001-4a1a-8a1a-000000000003",
+      "name": "Airtable: Write Failed Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{$env.AIRTABLE_BASE_ID}}/Runs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.AIRTABLE_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { 'Run ID': $json.runId, 'Trigger Type': $json.trigger, 'Started At': $json.startedAt, 'Ended At': $json.endedAt, 'Duration (sec)': $json.durationSec, 'Overall Status': $json.overallStatus, 'Source Status': $json.sourceStatus, 'Items Discovered': $json.itemsDiscovered, 'Items Filtered': $json.itemsFiltered, 'New Opportunities': $json.newOpportunities, 'Duplicates': $json.duplicates, 'AI Analyses': $json.aiAnalyses, 'AI Failures': $json.aiFailures, 'Errors': $json.errors  }, typecast: true }) }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "On Any Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Failure Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failure Record": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Write Failed Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -63,7 +63,10 @@
         "jsonBody": "={\"query\": \"\\\"medical writer\\\" OR \\\"nutrition writer\\\" OR \\\"health content writer\\\" OR \\\"clinical content\\\"\", \"maxJobAge\": {\"value\": 24, \"unit\": \"hours\"}, \"paymentVerified\": true, \"experienceLevel\": [\"intermediate\", \"expert\"], \"jobType\": [\"fixed\", \"hourly\"], \"clientHistory\": [\"noHires\", \"1to9Hires\", \"10+Hires\"]}",
         "options": {}
       },
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd511",
@@ -104,7 +107,10 @@
         },
         "options": {}
       },
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd513",
@@ -174,7 +180,10 @@
         "options": {}
       },
       "alwaysOutputData": true,
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd502",
@@ -202,7 +211,10 @@
         "jsonBody": "={\"query\": \"\\\"SaaS content writer\\\" OR \\\"B2B content writer\\\" OR \\\"technical content writer\\\" OR \\\"AI writer\\\"\", \"maxJobAge\": {\"value\": 24, \"unit\": \"hours\"}, \"paymentVerified\": true, \"experienceLevel\": [\"intermediate\", \"expert\"], \"jobType\": [\"fixed\", \"hourly\"], \"clientHistory\": [\"noHires\", \"1to9Hires\", \"10+Hires\"]}",
         "options": {}
       },
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd522",
@@ -243,7 +255,10 @@
         },
         "options": {}
       },
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd524",
@@ -313,7 +328,10 @@
         "options": {}
       },
       "alwaysOutputData": true,
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "21c95831-6ab1-478d-8001-411c3f0cd503",
@@ -341,7 +359,10 @@
         "jsonBody": "={\"query\": \"\\\"white paper writer\\\" OR \\\"long-form explainer\\\" OR \\\"research writer\\\" OR \\\"thought leadership writer\\\"\", \"maxJobAge\": {\"value\": 24, \"unit\": \"hours\"}, \"paymentVerified\": true, \"experienceLevel\": [\"intermediate\", \"expert\"], \"jobType\": [\"fixed\", \"hourly\"], \"clientHistory\": [\"noHires\", \"1to9Hires\", \"10+Hires\"]}",
         "options": {}
       },
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd533",
@@ -382,7 +403,10 @@
         },
         "options": {}
       },
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd535",
@@ -452,7 +476,10 @@
         "options": {}
       },
       "alwaysOutputData": true,
-      "disabled": true
+      "disabled": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "7d460766-2020-437d-b42d-0188883cbc59",
@@ -478,7 +505,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Map the Upwork actor's output onto a common shape.\n// Apify returns [] for an empty/failed run; with alwaysOutputData the node\n// upstream hands us a single {} item. Emit a sentinel instead of nothing --\n// a Code node that returns [] stops its whole branch with no error.\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: j.title || j.jobTitle || 'Untitled',\n  description: j.description || j.snippet || '',\n  url: j.url || j.link || '',\n  platform: 'Upwork',\n}})).filter(x => x.json.url);\nreturn leads.length ? leads : [{ json: { __empty: 'Upwork', __raw: rows.length } }];"
+        "jsCode": "// Map the Upwork actor's output onto a common shape.\n// Apify returns [] for an empty/failed run; with alwaysOutputData the node\n// upstream hands us a single {} item. Emit a sentinel instead of nothing --\n// a Code node that returns [] stops its whole branch with no error.\nconst normalizeUrl = u => {\n  if (!u) return u;\n  try {\n    const url = new URL(u);\n    url.search = '';\n    url.hash = '';\n    let s = url.toString();\n    if (s.endsWith('/')) s = s.slice(0, -1);\n    return s;\n  } catch (e) { return u; } // not a real URL (e.g. test fixtures) -- leave as-is\n};\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: j.title || j.jobTitle || 'Untitled',\n  description: j.description || j.snippet || '',\n  url: normalizeUrl(j.url || j.link || ''),\n  platform: 'Upwork',\n}})).filter(x => x.json.url);\nreturn leads.length ? leads : [{ json: { __empty: 'Upwork', __raw: rows.length } }];"
       }
     },
     {
@@ -506,7 +533,10 @@
         "specifyBody": "json",
         "jsonBody": "={\"startUrls\":[{\"url\":\"https://cozyjobs.com/writing-jobs\"},{\"url\":\"https://problogger.com/jobs/\"}],\"crawlerType\":\"playwright:adaptive\",\"maxCrawlPages\":25,\"saveMarkdown\":true,\"removeCookieWarnings\":true,\"respectRobotsTxtFile\":true,\"proxyConfiguration\":{\"useApifyProxy\":true},\"includeUrlGlobs\":[{\"glob\":\"https://problogger.com/jobs/job/**\"},{\"glob\":\"https://cozyjobs.com/jobs/**\"}]}",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "31c95831-6ab1-478d-8001-411c3f0cd544",
@@ -545,7 +575,10 @@
           ]
         },
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "51c95831-6ab1-478d-8001-411c3f0cd546",
@@ -613,7 +646,10 @@
         },
         "options": {}
       },
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "3aec07db-d4bf-4249-9375-f23fa72603ee",
@@ -625,7 +661,7 @@
         420
       ],
       "parameters": {
-        "jsCode": "// apify~website-content-crawler returns { url, text, markdown, metadata: {title, description} }.\n// Title lives under metadata, not at the top level.\n// Keep only individual job posts -- the crawler also saves the board/list pages it starts from.\nconst JOB_URL = /^https:\\/\\/(problogger\\.com\\/jobs\\/job\\/|cozyjobs\\.com\\/jobs\\/)/;\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: (j.metadata && j.metadata.title) || j.title || 'Untitled',\n  description: j.text || j.markdown || '',\n  url: j.url || (j.metadata && j.metadata.canonicalUrl) || '',\n  platform: 'Company Site',\n}})).filter(x => JOB_URL.test(x.json.url));\nreturn leads.length ? leads : [{ json: { __empty: 'Company Site', __raw: rows.length } }];"
+        "jsCode": "// apify~website-content-crawler returns { url, text, markdown, metadata: {title, description} }.\n// Title lives under metadata, not at the top level.\n// Keep only individual job posts -- the crawler also saves the board/list pages it starts from.\nconst normalizeUrl = u => {\n  if (!u) return u;\n  try {\n    const url = new URL(u);\n    url.search = '';\n    url.hash = '';\n    let s = url.toString();\n    if (s.endsWith('/')) s = s.slice(0, -1);\n    return s;\n  } catch (e) { return u; } // not a real URL (e.g. test fixtures) -- leave as-is\n};\nconst JOB_URL = /^https:\\/\\/(problogger\\.com\\/jobs\\/job\\/|cozyjobs\\.com\\/jobs\\/)/;\nconst rows = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length);\nconst leads = rows.map(j => ({ json: {\n  title: (j.metadata && j.metadata.title) || j.title || 'Untitled',\n  description: j.text || j.markdown || '',\n  url: normalizeUrl(j.url || (j.metadata && j.metadata.canonicalUrl) || ''),\n  platform: 'Company Site',\n}})).filter(x => JOB_URL.test(x.json.url));\nreturn leads.length ? leads : [{ json: { __empty: 'Company Site', __raw: rows.length } }];"
       }
     },
     {
@@ -704,7 +740,10 @@
           ]
         },
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "e9388bbb-39be-4ef7-be82-bc6b432c2586",
@@ -764,11 +803,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You are screening freelance leads for a writer with an MSc in Human Nutrition and Dietetics who works across two core pillars: (1) evidence-based nutrition and health content that requires clinical accuracy and primary-source research, and (2) technology, AI, SaaS and B2B content that explains complex products to non-expert audiences. White papers and long-form explainers are core work in either pillar. TIER A, score 7-10: work in either core pillar that needs genuine subject-matter literacy - clinical accuracy, research skill, or the ability to explain a technical product credibly. TIER B, score 4-6: general commercial writing she accepts but does not specialize in - SEO blog posts, website and About copy, product descriptions, e-commerce content, email and social copy, executive ghostwriting. Score toward 6 when the budget is strong or the client sits in a core niche. TIER C, score 1-3: content-mill work, unrelated industries, no-budget or spammy postings, unpaid guest posts, or sites that charge writers to publish. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or Not specified), fit_score (integer 1-10), score_reasoning (1 sentence, specific about which pillar and tier and why), urgency (one of High, Medium, Low).' }, { role: 'user', content: 'Listing title: ' + $('Loop Leads').item.json.title + '\\n\\nListing text: ' + $('Loop Leads').item.json.description } ] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', response_format: { type: 'json_object' }, messages: [ { role: 'system', content: \"You are the Opportunity Analyst for a freelance writer with an MSc in Human Nutrition and Dietetics who works across two core pillars: (1) evidence-based nutrition and health content that requires clinical accuracy and primary-source research, and (2) technology, AI, SaaS and B2B content that explains complex products to non-expert audiences. White papers and long-form explainers are core work in either pillar. Score SKILL FIT (does she have the expertise to do this well) separately from VALUE (is it worth her time -- budget, scope, recurring potential). TIER A skill fit 7-10: work in either core pillar that needs genuine subject-matter literacy -- clinical accuracy, research skill, or the ability to explain a technical product credibly. TIER B skill fit 4-6: general commercial writing she accepts but does not specialize in -- SEO blog posts, website and About copy, product descriptions, e-commerce content, email and social copy, executive ghostwriting. TIER C skill fit 1-3: content-mill work, unrelated industries, no-budget or spammy postings, unpaid guest posts, or sites that charge writers to publish. Score VALUE higher for a strong or clearly stated budget, recurring or retainer language, and an established-looking client; score it lower for unstated budget, one-off scope, or content-mill pay signals. Separate what the listing text actually states (verified_facts) from what you are guessing based on context (inferred_signals) from what cannot be determined at all (unknown_factors) -- never state an inference as if it were a fact. Set confidence to Low whenever the listing text is thin, vague, or mostly boilerplate. Set recommended_action to Apply only for skill_fit 7+ with no major negative signal, Skip for skill_fit 3 or below or any disqualifying red flag, Consider otherwise. Set niche_tag to a short lowercase-hyphenated label for the opportunity type, such as health-nutrition, tech-saas-b2b, or general-content -- invent a new tag if neither fits, so the freelancer can eventually see which niches are actually converting. Return ONLY a JSON object with keys: client_name, need_summary (1-2 sentences), budget_signal (or Not specified), skill_fit_score (integer 1-10), value_score (integer 1-10), confidence (High, Medium, or Low), score_reasoning (1 sentence, specific about which pillar and tier and why), recommended_action (Apply, Consider, or Skip), niche_tag (short lowercase-hyphenated label), verified_facts (array of short strings, only things the listing text actually states), inferred_signals (array of short strings, your judgment calls, may be empty), unknown_factors (array of short strings naming what is unknown, may be empty), positive_signals (array of short strings), negative_signals (array of short strings), urgency (one of High, Medium, Low).\" }, { role: 'user', content: 'Listing title: ' + $('Loop Leads').item.json.title + '\\n\\nListing text: ' + $('Loop Leads').item.json.description } ] }) }}",
         "options": {
           "timeout": 60000
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "da81eaa2-89e1-4133-8b71-031d70056ea2",
@@ -780,7 +822,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// The chat completion's message content is a JSON *string* -- parse it,\n// then attach the original scraped fields so nothing is lost.\nconst source = $('Loop Leads').item.json;\nconst content = $input.first().json.choices[0].message.content;\nlet ai;\ntry {\n  ai = JSON.parse(content);\n} catch (e) {\n  ai = {\n    client_name: 'Unknown',\n    need_summary: '',\n    budget_signal: 'Not specified',\n    fit_score: 0,\n    score_reasoning: 'AI response was not valid JSON -- check the prompt/model.',\n    urgency: 'Low',\n  };\n}\n\nreturn [{ json: {\n  title: source.title,\n  description: source.description,\n  url: source.url,\n  platform: source.platform,\n  client_name: ai.client_name,\n  need_summary: ai.need_summary,\n  budget_signal: ai.budget_signal,\n  fit_score: ai.fit_score,\n  score_reasoning: ai.score_reasoning,\n  urgency: ai.urgency,\n}}];"
+        "jsCode": "// The chat completion's message content is a JSON *string* -- parse it,\n// then attach the original scraped fields so nothing is lost.\nconst source = $('Loop Leads').item.json;\nconst content = $input.first().json.choices[0].message.content;\nlet ai;\ntry {\n  ai = JSON.parse(content);\n} catch (e) {\n  ai = {\n    client_name: 'Unknown',\n    need_summary: '',\n    budget_signal: 'Not specified',\n    skill_fit_score: 0,\n    value_score: 0,\n    confidence: 'Low',\n    score_reasoning: 'AI response was not valid JSON -- check the prompt/model.',\n    recommended_action: 'Consider',\n    niche_tag: '',\n    verified_facts: [],\n    inferred_signals: [],\n    unknown_factors: [],\n    positive_signals: [],\n    negative_signals: [],\n    urgency: 'Low',\n  };\n}\n\n// Long Text Airtable fields hold evidence lists as newline-joined bullets,\n// not JSON -- mirrors lib/airtable.ts's toLines/fromLines on the app side.\nconst lines = v => (Array.isArray(v) ? v : []).filter(Boolean).join('\\n');\n\nreturn [{ json: {\n  title: source.title,\n  description: source.description,\n  url: source.url,\n  platform: source.platform,\n  client_name: ai.client_name || 'Unknown',\n  need_summary: ai.need_summary || '',\n  budget_signal: ai.budget_signal || 'Not specified',\n  skill_fit_score: ai.skill_fit_score || 0,\n  value_score: ai.value_score || 0,\n  confidence: ai.confidence || 'Low',\n  score_reasoning: ai.score_reasoning || '',\n  recommended_action: ai.recommended_action || 'Consider',\n  niche_tag: ai.niche_tag || '',\n  verified_facts: lines(ai.verified_facts),\n  inferred_signals: lines(ai.inferred_signals),\n  unknown_factors: lines(ai.unknown_factors),\n  positive_signals: lines(ai.positive_signals),\n  negative_signals: lines(ai.negative_signals),\n  urgency: ai.urgency || 'Low',\n}}];"
       }
     },
     {
@@ -810,9 +852,12 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ fields: { 'Title': $json.title, 'Client/Company': $json.client_name, 'Source URL': $json.url, 'Source Platform': $json.platform, 'Need Summary': $json.need_summary, 'Raw Description': $json.description, 'Budget Signal': $json.budget_signal, 'Fit Score': $json.fit_score, 'Score Reasoning': $json.score_reasoning, 'Urgency': $json.urgency, 'Status': 'New', 'Date Found': $now.toISO() } }) }}",
+        "jsonBody": "={{ JSON.stringify({ fields: { 'Title': $json.title, 'Client/Company': $json.client_name, 'Source URL': $json.url, 'Source Platform': $json.platform, 'Need Summary': $json.need_summary, 'Raw Description': $json.description, 'Budget Signal': $json.budget_signal, 'Fit Score': $json.skill_fit_score, 'Value Score': $json.value_score, 'Confidence': $json.confidence, 'Score Reasoning': $json.score_reasoning, 'Recommended Action': $json.recommended_action, 'Niche Tag': $json.niche_tag, 'Verified Facts': $json.verified_facts, 'Inferred Signals': $json.inferred_signals, 'Unknown Factors': $json.unknown_factors, 'Positive Signals': $json.positive_signals, 'Negative Signals': $json.negative_signals, 'Urgency': $json.urgency, 'Status': 'Needs Review', 'Date Found': $now.toISO()  }, typecast: true }) }}",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "fd73066b-f4f7-4cfe-8b7f-5fc28503c9ce",
@@ -845,7 +890,10 @@
           ]
         },
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "693544e3-0637-4e73-bd20-b76c6fce5b0c",
@@ -908,6 +956,123 @@
         "html": "={{$json.html}}",
         "options": {}
       }
+    },
+    {
+      "id": "228f826a-73fe-445d-871c-10c196737320",
+      "name": "Was Scheduled?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        520
+      ],
+      "parameters": {
+        "jsCode": "// Trigger type was already determined once, in \"Start Run\" -- reuse it so\n// there's a single source of truth per run instead of detecting it twice.\nconst sd = $getWorkflowStaticData('global');\nreturn $input.all().map(i => ({ json: { ...i.json, scheduled: sd.trigger === 'scheduled' } }));"
+      }
+    },
+    {
+      "id": "3832a478-da6c-44a9-a7b3-bf1b881ee03e",
+      "name": "Scheduled Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2180,
+        520
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.scheduled}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "aa461c22-d635-4362-8403-370c4419ce47",
+      "name": "Start Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        90
+      ],
+      "parameters": {
+        "jsCode": "// Resets the per-run counters \"Record Source Stats\" and \"Write Run Record\"\n// use below. Workflow static data, not a database -- fine for one on-demand\n// button + one daily cron on a single n8n instance (same accepted trade-off\n// as lib/run-status.ts on the website side). Two runs overlapping would\n// clobber each other's counters; not a realistic risk for one freelancer's\n// workflow.\nlet trigger = 'scheduled';\ntry { $('Manual Run (Webhook)').item; trigger = 'manual'; } catch (e) {}\nconst sd = $getWorkflowStaticData('global');\nsd.runId = $execution.id;\nsd.trigger = trigger;\nsd.startedAt = $now.toISO();\nsd.sources = {};\nsd.itemsDiscovered = 0;\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "fb398a6f-4dde-456b-a499-088ba0017d2d",
+      "name": "Record Source Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Per-source health, computed once before filtering/scoring so a source\n// that quietly returns nothing is visible in the Runs record even when the\n// overall run \"succeeds\" (only ALL sources being empty throws, in Keyword\n// Pre-Filter below -- a single dead source among healthy ones does not).\nconst all = $input.all().map(i => i.json);\nconst sd = $getWorkflowStaticData('global');\nsd.sources = sd.sources || {};\nfor (const j of all) {\n  const src = j.__empty || j.platform;\n  if (!src) continue;\n  if (!(src in sd.sources)) sd.sources[src] = 0;\n  if (!j.__empty) sd.sources[src] += 1;\n}\nsd.itemsDiscovered = all.filter(j => !j.__empty).length;\nreturn $input.all();"
+      }
+    },
+    {
+      "id": "22054a58-7fb3-4bb9-bded-57638bd9cb04",
+      "name": "Write Run Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        680
+      ],
+      "parameters": {
+        "jsCode": "// Builds this run's Airtable \"Runs\" record. $input.all() here is Loop\n// Leads' accumulated \"done\" output -- every lead the loop touched, whether\n// skipped as a duplicate or created. A created item is Airtable's create\n// response ({id, fields}); a duplicate-skip item keeps its original\n// {title, description, url, platform} shape (see \"Is New Lead?\" wiring) --\n// that's how the two are told apart, no extra tagging needed.\nconst items = $input.all().map(i => i.json);\nconst sd = $getWorkflowStaticData('global');\nconst AI_FAILURE_MARKER = 'AI response was not valid JSON -- check the prompt/model.';\n\nconst created = items.filter(i => i.id && i.fields);\nconst duplicates = items.length - created.length;\nconst aiFailures = created.filter(i => i.fields['Score Reasoning'] === AI_FAILURE_MARKER).length;\n\nconst itemsDiscovered = sd.itemsDiscovered || 0;\nconst itemsFiltered = Math.max(itemsDiscovered - items.length, 0);\n\nconst sourceStatus = Object.entries(sd.sources || {})\n  .map(([name, count]) => `${name}: ${count} item${count === 1 ? '' : 's'}`)\n  .join(' | ') || 'No sources ran';\n\nconst startedAt = sd.startedAt || $now.toISO();\nconst durationSec = Math.round((new Date($now.toISO()).getTime() - new Date(startedAt).getTime()) / 1000);\n\nreturn [{ json: {\n  runId: sd.runId || $execution.id,\n  trigger: sd.trigger === 'manual' ? 'Manual' : 'Scheduled',\n  startedAt,\n  endedAt: $now.toISO(),\n  durationSec,\n  overallStatus: itemsDiscovered === 0 ? 'No Items Found' : 'Success',\n  sourceStatus,\n  itemsDiscovered,\n  itemsFiltered,\n  newOpportunities: created.length,\n  duplicates,\n  aiAnalyses: created.length,\n  aiFailures,\n  errors: '',\n}}];"
+      }
+    },
+    {
+      "id": "c632041c-82e0-4019-8c1d-6b98811afe1a",
+      "name": "Airtable: Write Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        680
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{$env.AIRTABLE_BASE_ID}}/Runs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.AIRTABLE_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { 'Run ID': $json.runId, 'Trigger Type': $json.trigger, 'Started At': $json.startedAt, 'Ended At': $json.endedAt, 'Duration (sec)': $json.durationSec, 'Overall Status': $json.overallStatus, 'Source Status': $json.sourceStatus, 'Items Discovered': $json.itemsDiscovered, 'Items Filtered': $json.itemsFiltered, 'New Opportunities': $json.newOpportunities, 'Duplicates': $json.duplicates, 'AI Analyses': $json.aiAnalyses, 'AI Failures': $json.aiFailures, 'Errors': $json.errors  }, typecast: true }) }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     }
   ],
   "connections": {
@@ -915,22 +1080,7 @@
       "main": [
         [
           {
-            "node": "Apify: Start Upwork 1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Apify: Start Upwork 2",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Apify: Start Upwork 3",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Apify: Start Company Sites",
+            "node": "Start Run",
             "type": "main",
             "index": 0
           }
@@ -941,22 +1091,7 @@
       "main": [
         [
           {
-            "node": "Apify: Start Upwork 1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Apify: Start Upwork 2",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Apify: Start Upwork 3",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Apify: Start Company Sites",
+            "node": "Start Run",
             "type": "main",
             "index": 0
           }
@@ -1237,7 +1372,7 @@
       "main": [
         [
           {
-            "node": "Keyword Pre-Filter",
+            "node": "Record Source Stats",
             "type": "main",
             "index": 0
           }
@@ -1259,7 +1394,7 @@
       "main": [
         [
           {
-            "node": "Airtable: Get Today's Top Leads",
+            "node": "Was Scheduled?",
             "type": "main",
             "index": 0
           }
@@ -1373,6 +1508,82 @@
         [
           {
             "node": "Normalize: Upwork",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Was Scheduled?": {
+      "main": [
+        [
+          {
+            "node": "Scheduled Run?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Write Run Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scheduled Run?": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Get Today's Top Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Start Run": {
+      "main": [
+        [
+          {
+            "node": "Apify: Start Upwork 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Start Upwork 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Start Upwork 3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify: Start Company Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Source Stats": {
+      "main": [
+        [
+          {
+            "node": "Keyword Pre-Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Run Record": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Write Run",
             "type": "main",
             "index": 0
           }
